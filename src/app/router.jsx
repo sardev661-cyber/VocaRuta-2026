@@ -14,8 +14,10 @@ import SimulationsPage from '../features/simulations/SimulationsPage';
 import SimulationDetailPage from '../features/simulations/SimulationDetailPage';
 import ComparePage from '../features/compare/ComparePage';
 import ReportPage from '../features/report/ReportPage';
-import PricingPage from '../features/pricing/PricingPage';
 import SchoolPanelPage from '../features/school-panel/SchoolPanelPage';
+import AboutPage from '../features/info/AboutPage';
+import FamiliesPage from '../features/info/FamiliesPage';
+import NotFoundPage from '../features/info/NotFoundPage';
 
 export const router = createBrowserRouter([
   {
@@ -25,7 +27,8 @@ export const router = createBrowserRouter([
       { index: true, element: <LandingPage /> },
       { path: ROUTES.LOGIN, element: <LoginPage /> },
       { path: ROUTES.REGISTER, element: <RegisterPage /> },
-      { path: ROUTES.PRICING, element: <PricingPage /> },
+      { path: ROUTES.ABOUT, element: <AboutPage /> },
+      { path: ROUTES.FAMILIES, element: <FamiliesPage /> },
     ],
   },
   {
@@ -47,5 +50,6 @@ export const router = createBrowserRouter([
     children: [
       { index: true, element: <SchoolPanelPage /> },
     ],
-  }
+  },
+  { path: '*', element: <NotFoundPage /> }
 ]);

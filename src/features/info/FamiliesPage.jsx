@@ -1,0 +1,7 @@
+import { Link } from 'react-router-dom';
+import { ArrowRight, MessageCircle, Ear, Search } from 'lucide-react';
+
+export default function FamiliesPage() {
+  const prompts=['¿Qué actividad disfrutaste y por qué?','¿Qué opción te dio curiosidad aunque no esté entre tus primeras ideas?','¿Qué información te falta para descartar o seguir investigando una carrera?'];
+  return <section className="page-width section-pad info-page"><span className="eyebrow">PARA FAMILIAS Y ACOMPAÑANTES</span><h1>Acompañar es ayudar<br/>a hacer mejores preguntas.</h1><p className="lead">VocaRuta ofrece un punto de partida para conversar sin convertir un porcentaje en una orden.</p><div className="info-grid"><article className="panel"><Ear/><h2>Escucha primero</h2><p>Pregunta qué descubrió y evita interpretar la afinidad como una calificación o una sentencia.</p></article><article className="panel"><Search/><h2>Investigen juntos</h2><p>Contrasten actividades, mallas curriculares y entornos de trabajo en fuentes actuales.</p></article><article className="panel"><MessageCircle/><h2>Dejen espacio</h2><p>La claridad puede crecer al probar, conversar y cambiar de hipótesis.</p></article></div><section className="panel conversation-card"><span className="eyebrow">PREGUNTAS PARA CONVERSAR</span><h2>Empieza con curiosidad.</h2>{prompts.map((p,i)=><p key={p}><span>0{i+1}</span>{p}</p>)}</section><Link className="btn" to="/registro">Explorar el recorrido <ArrowRight size={17}/></Link></section>;
+}

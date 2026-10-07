@@ -1,116 +1,16 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { ROUTES } from '../../app/routes';
+import { Link } from 'react-router-dom';
+import { Compass, Search, FlaskConical, Columns3, FileText, ArrowRight, Check, RotateCcw, Sparkles } from 'lucide-react';
 import { useJourney } from '../../context/JourneyContext';
-import { Button } from '../../components/ui/Button';
-import { Card } from '../../components/ui/Card';
-import { SectionHeader } from '../../components/ui/SectionHeader';
-import { ArrowRight, Compass, Search, FlaskConical, BarChart3, CheckCircle } from 'lucide-react';
-import { clsx } from 'clsx';
-
-export default function DashboardPage() {
-  const { state, dispatch } = useJourney();
-  const navigate = useNavigate();
-  const [certainty, setCertainty] = useState(state.initialCertainty || 0);
-
-  const STAGES_INFO = [
-    { id: 1, title: 'Conócete', desc: 'Descubre tus intereses y habilidades', route: ROUTES.ASSESSMENT, icon: <Compass className="w-5 h-5" /> },
-    { id: 2, title: 'Explora', desc: 'Revisa tus carreras compatibles', route: ROUTES.EXPLORE, icon: <Search className="w-5 h-5" /> },
-    { id: 3, title: 'Prueba', desc: 'Vive simulaciones reales', route: ROUTES.SIMULATIONS, icon: <FlaskConical className="w-5 h-5" /> },
-    { id: 4, title: 'Compara', desc: 'Analiza mercado y datos', route: ROUTES.COMPARE, icon: <BarChart3 className="w-5 h-5" /> },
-    { id: 5, title: 'Decide', desc: 'Obtén tu reporte final', route: ROUTES.REPORT, icon: <CheckCircle className="w-5 h-5" /> },
-  ];
-
-  const handleSetCertainty = (val) => {
-    setCertainty(val);
-    dispatch({ type: 'SET_INITIAL_CERTAINTY', payload: val });
-  };
-
-  const handleContinue = () => {
-    const nextRoute = STAGES_INFO[state.currentStage - 1]?.route || ROUTES.REPORT;
-    navigate(nextRoute);
-  };
-
-  return (
-    <div className="space-y-8 animate-in fade-in duration-500">
-      <SectionHeader 
-        title="Hola, Estudiante" 
-        description="Bienvenido a tu ruta de orientación vocacional."
-      />
-
-      {state.initialCertainty === null && (
-        <Card className="p-6 bg-primary-50 border-primary-100">
-          <h3 className="font-semibold text-primary-900 mb-2">Antes de empezar...</h3>
-          <p className="text-primary-700 text-sm mb-4">¿Qué tan seguro estás de tu elección de carrera hoy? (1 = Nada seguro, 5 = Muy seguro)</p>
-          <div className="flex gap-2">
-            {[1, 2, 3, 4, 5].map(num => (
-              <button
-                key={num}
-                onClick={() => handleSetCertainty(num)}
-                className={clsx(
-                  "w-12 h-12 rounded-lg font-medium text-lg transition-colors border",
-                  certainty === num 
-                    ? "bg-primary-600 text-white border-primary-600" 
-                    : "bg-white text-slate-600 border-slate-300 hover:border-primary-400"
-                )}
-              >
-                {num}
-              </button>
-            ))}
-          </div>
-        </Card>
-      )}
-
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-        {STAGES_INFO.map((stage) => {
-          const isCompleted = state.currentStage > stage.id;
-          const isCurrent = state.currentStage === stage.id;
-          const isLocked = state.currentStage < stage.id;
-
-          return (
-            <Card 
-              key={stage.id} 
-              className={clsx(
-                "p-5 relative overflow-hidden transition-all",
-                isCurrent && "ring-2 ring-primary-500 border-transparent shadow-md",
-                isLocked && "opacity-60 bg-slate-50",
-                isCompleted && "bg-white border-primary-100"
-              )}
-            >
-              <div className={clsx(
-                "w-10 h-10 rounded-lg flex items-center justify-center mb-4",
-                isCompleted ? "bg-primary-100 text-primary-600" :
-                isCurrent ? "bg-primary-600 text-white" :
-                "bg-slate-200 text-slate-400"
-              )}
-              >
-                {stage.icon}
-              </div>
-              <h4 className={clsx("font-semibold mb-1", isLocked ? "text-slate-500" : "text-slate-900")}>
-                {stage.id}. {stage.title}
-              </h4>
-              <p className="text-xs text-slate-500">{stage.desc}</p>
-              
-              {isCompleted && (
-                <div className="absolute top-4 right-4 w-5 h-5 bg-success-500 rounded-full flex items-center justify-center text-white">
-                  <CheckCircle className="w-3 h-3" />
-                </div>
-              )}
-            </Card>
-          );
-        })}
-      </div>
-
-      <div className="flex justify-end mt-8">
-        <Button 
-          onClick={handleContinue} 
-          disabled={state.initialCertainty === null}
-          className="h-12 px-6"
-        >
-          {state.currentStage === 1 ? 'Empezar mi ruta' : 'Continuar mi ruta'}
-          <ArrowRight className="ml-2 w-5 h-5" />
-        </Button>
-      </div>
-    </div>
-  );
+import { routeProgress, recommendations } from '../../utils/journey';
+const steps=[['Conócete','Un momento para descubrir tus intereses.','conocete',Compass],['Explora','Diez alternativas, nuevas posibilidades.','explora',Search],['Prueba','Vive una pequeña parte de la profesión.','prueba',FlaskConical],['Compara','Pon tus opciones una al lado de la otra.','compara',Columns3],['Decide','Traza tus próximos pasos.','decide',FileText]];
+export default function DashboardPage(){
+ const {state,dispatch}=useJourney(); const [reset,setReset]=useState(false);
+ const done=[!!state.studentScores,state.explored.length>0,Object.keys(state.completedSimulations).length>0,state.comparisonReviewed,!!state.finalCertainty];
+ const next=Math.max(0,done.findIndex(d=>!d)); const top=recommendations(state)[0];
+ return <div className="stack"><div className="page-title"><div><span className="eyebrow">UN FUTURO CON MÁS POSIBILIDADES</span><h1>Hola, {state.profile?.name || 'explorador'} <span className="wave">✳</span></h1><p>No necesitas tener todas las respuestas. Empecemos por explorar.</p></div><span className="badge">{routeProgress(state)} de 5 etapas</span></div>
+ <section className="journey-hero"><div><span className="eyebrow">TU SIGUIENTE PASO</span><h2>{done.every(Boolean)?'Tu ruta sigue abierta.':next===0?'Todo empieza por conocerte.':steps[next][0]+', con un poco más de claridad.'}</h2><p>{done.every(Boolean)?'Revisa lo que descubriste y continúa validando tus alternativas.':steps[next][1]}</p><Link className="btn" to={done.every(Boolean)?'/app/decide':'/app/'+steps[next][2]}>{done.every(Boolean)?'Ver mi ruta personal':next===0?'Comenzar cuestionario':'Continuar mi ruta'} <ArrowRight size={18}/></Link></div><div className="journey-compass"><Compass size={105} strokeWidth={1}/><span>LA DIRECCIÓN LA ELIGES TÚ</span></div></section>
+ {state.initialCertainty===null&&<section className="panel certainty-panel"><div><h3>Antes de empezar, ¿qué tan clara tienes tu elección?</h3><p>No hay una respuesta correcta. Nos servirá para comparar cómo te sientes al terminar.</p></div><div><div className="rating-row">{[1,2,3,4,5].map(n=><button key={n} onClick={()=>dispatch({type:'SET_INITIAL_CERTAINTY',payload:n})} aria-label={'Certeza inicial '+n+' de 5'}>{n}</button>)}</div><div className="scale-labels"><span>Nada clara</span><span>Muy clara</span></div></div></section>}
+ <section><div className="section-heading compact"><h2>Tu ruta, paso a paso</h2><span className="muted small">Puedes volver a cualquier etapa</span></div><div className="dashboard-steps">{steps.map(([title,desc,path,Icon],i)=><Link className={'dashboard-step '+(done[i]?'done':i===next?'current':'')} key={path} to={'/app/'+path}><div className="step-number">{done[i]?<Check size={16}/>:'0'+(i+1)}</div><Icon size={23}/><h3>{title}</h3><p>{desc}</p><span>{done[i]?'Volver a explorar':i===next?'Empezar aquí':'Ver etapa'} <ArrowRight size={14}/></span></Link>)}</div></section>
+ <div className="dashboard-bottom"><section className="panel"><span className="tile-icon violet"><Sparkles/></span><h3>{top?'Una alternativa para investigar':'La curiosidad es un buen comienzo.'}</h3><p>{top?top.name+' aparece entre tus alternativas. Revisa qué actividades implica y contrástala con otras opciones.':'Puedes empezar con una idea, varias carreras en mente o ninguna. Este espacio es para hacer preguntas, probar y aprender.'}</p><Link to={top?'/app/explora':'/app/prueba'} className="text-link">{top?'Revisar mis alternativas':'Conocer los retos'} <ArrowRight size={16}/></Link></section><section className="panel"><h3>Este es tu espacio.</h3><p>Tu avance se conserva en este navegador. En un dispositivo compartido, descarga tu reporte y borra tu ruta al terminar.</p><button className="text-link muted" onClick={()=>setReset(!reset)}><RotateCcw size={15}/> Reiniciar mi ruta</button>{reset&&<div className="reset-confirm" role="alert"><p>Se borrarán tu perfil y tus respuestas de este navegador. Esta acción no se puede deshacer.</p><button className="btn btn-danger" onClick={()=>{dispatch({type:'RESET_JOURNEY'});setReset(false);}}>Borrar mi avance</button><button className="btn btn-outline" onClick={()=>setReset(false)}>Cancelar</button></div>}</section></div></div>;
 }

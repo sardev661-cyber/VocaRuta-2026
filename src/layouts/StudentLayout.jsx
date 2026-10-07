@@ -1,46 +1,12 @@
-import { Link } from 'react-router-dom';
-import { ROUTES } from '../app/routes';
-import { Button } from '../components/ui/Button';
-import { Stepper } from '../components/ui/Stepper';
+import { Outlet, NavLink, Link, useLocation } from 'react-router-dom';
+import { Compass, LayoutDashboard, Search, FlaskConical, Columns3, FileText, ArrowLeft, CircleHelp } from 'lucide-react';
+import Brand from '../components/Brand';
 import { useJourney } from '../context/JourneyContext';
-
-const STAGES = ['Conócete', 'Explora', 'Prueba', 'Compara', 'Decide'];
-
+import { routeProgress } from '../utils/journey';
+const nav = [['/app','Mi ruta',LayoutDashboard],['/app/conocete','Conócete',Compass],['/app/explora','Explora',Search],['/app/prueba','Prueba',FlaskConical],['/app/compara','Compara',Columns3],['/app/decide','Decide',FileText]];
 export default function StudentLayout() {
-  const { state } = useJourney();
-
-  return (
-    <div className="min-h-screen flex flex-col bg-slate-50">
-      <header className="border-b border-slate-200 bg-white sticky top-0 z-30">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <Link to={ROUTES.DASHBOARD} className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center text-white font-bold text-xl">V</div>
-            <span className="font-bold text-xl text-slate-900 tracking-tight hidden sm:block">VocaRuta</span>
-          </Link>
-          
-          <div className="flex-grow max-w-2xl mx-8 hidden md:block">
-            <Stepper steps={STAGES} currentStep={state.currentStage - 1} />
-          </div>
-
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 bg-slate-100 rounded-full flex items-center justify-center text-slate-600 font-medium">
-              U
-            </div>
-          </div>
-        </div>
-        
-        {/* Mobile stepper */}
-        <div className="md:hidden px-4 py-3 border-t border-slate-100 bg-slate-50">
-          <Stepper steps={STAGES} currentStep={state.currentStage - 1} />
-        </div>
-      </header>
-      
-      <main className="flex-grow flex flex-col p-4 md:p-8 max-w-5xl mx-auto w-full">
-        <Outlet />
-      </main>
-    </div>
-  );
+  const {state,storageError} = useJourney(); const location = useLocation();
+  const active = nav.find(([p]) => p !== '/app' && location.pathname.startsWith(p)) || nav[0];
+  const progress = routeProgress(state)*20;
+  return <div className="workspace"><a className="skip-link" href="#contenido">Saltar al contenido</a><aside className="sidebar"><Brand/><div className="sidebar-label">TU PRÓXIMO CAPÍTULO</div><nav aria-label="Tu ruta vocacional">{nav.map(([path,label,Icon],i) => <NavLink key={path} to={path} end={path==='/app'} className={({isActive}) => isActive ? 'side-link active':'side-link'}><Icon size={19}/><span>{label}</span>{i>0 && <small>0{i}</small>}</NavLink>)}</nav><div className="sidebar-bottom"><div className="route-progress"><span>Tu recorrido <b>{progress}%</b></span><div className="progress-track"><i style={{width:progress+'%'}}/></div><p>Paso a paso, a tu ritmo.</p></div><Link to="/acerca" className="side-link"><CircleHelp size={18}/> Cómo funciona el MVP</Link><Link to="/" className="side-link"><ArrowLeft size={18}/> Volver al inicio</Link></div></aside><div className="workspace-body"><header className="workspace-header"><span>Mi espacio <span className="breadcrumb">/ {active[1]}</span></span><div className="profile-chip"><span className="save-state">{storageError?'No se pudo guardar':'Guardado en este dispositivo'}</span><span className="avatar">{state.profile?.name?.charAt(0).toUpperCase() || 'V'}</span><span>{state.profile?.name || 'Explorador'}</span></div></header><main id="contenido" className="workspace-main" key={location.pathname}>{storageError && <p role="alert" className="notice">El navegador no permite guardar el avance. Descarga tu reporte antes de cerrar.</p>}<Outlet/></main><footer className="workspace-footer">VocaRuta · Tu futuro se explora, no se adivina.<span>MVP de orientación vocacional</span></footer></div></div>;
 }
-
-// Need to import Outlet
-import { Outlet } from 'react-router-dom';

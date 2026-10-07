@@ -1,147 +1,21 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { ROUTES } from '../../app/routes';
+import { useState } from 'react';
+import { Link } from 'react-router-dom';
+import { Search, ArrowRight, Plus, Check, X, BookOpen } from 'lucide-react';
 import { useJourney } from '../../context/JourneyContext';
-import { careerService } from '../../services/careerService';
-import { Button } from '../../components/ui/Button';
-import { Card } from '../../components/ui/Card';
-import { Alert } from '../../components/ui/Alert';
-import { SectionHeader } from '../../components/ui/SectionHeader';
-import { Badge } from '../../components/ui/Badge';
-import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer } from 'recharts';
-import { PlayCircle, PlusCircle, Check } from 'lucide-react';
-
-const DIMENSION_LABELS = {
-  interests: 'Intereses',
-  skills: 'Habilidades',
-  values: 'Valores',
-  workPreferences: 'Estilo de Trabajo',
-  expectations: 'Expectativas'
-};
-
-export default function ExplorePage() {
-  const { state, dispatch } = useJourney();
-  const navigate = useNavigate();
-  const [careers, setCareers] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    if (!state.studentScores) {
-      navigate(ROUTES.ASSESSMENT);
-      return;
-    }
-
-    // Always fetch latest recommendations in case scores updated
-    careerService.getRecommendedCareers(state.studentScores, 5).then(data => {
-      setCareers(data);
-      dispatch({ type: 'SET_RECOMMENDED_CAREERS', payload: data });
-      setLoading(false);
-    });
-  }, [state.studentScores, navigate, dispatch]);
-
-  const toggleCompare = (careerId) => {
-    dispatch({ type: 'TOGGLE_COMPARE', payload: careerId });
-  };
-
-  const handleTestCareer = (careerId) => {
-    dispatch({ type: 'SET_STAGE', payload: Math.max(state.currentStage, 3) });
-    navigate(`${ROUTES.SIMULATIONS}?career=${careerId}`);
-  };
-
-  if (loading || !state.studentScores) return <div className="p-8 text-center text-slate-500">Analizando perfil...</div>;
-
-  // Prepare radar data
-  const radarData = Object.keys(DIMENSION_LABELS).map(key => ({
-    subject: DIMENSION_LABELS[key],
-    A: state.studentScores[key] || 0,
-    fullMark: 5,
-  }));
-
-  return (
-    <div className="space-y-8 animate-in fade-in duration-500">
-      <SectionHeader 
-        title="Tus alternativas recomendadas" 
-        description="Estas son las carreras que muestran mayor alineación con tus respuestas."
-        action={
-          <Button onClick={() => {
-            dispatch({ type: 'SET_STAGE', payload: Math.max(state.currentStage, 3) });
-            navigate(ROUTES.SIMULATIONS);
-          }}>
-            Ir a Simulaciones <PlayCircle className="ml-2 w-4 h-4" />
-          </Button>
-        }
-      />
-
-      <Alert variant="warning" className="mb-6">
-        <span className="font-semibold">Importante: </span>
-        La compatibilidad no es una probabilidad de éxito profesional ni una regla estricta. Es una guía para que sepas qué áreas priorizar en tu exploración.
-      </Alert>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-        <div className="lg:col-span-2 space-y-4">
-          {careers.map((career, idx) => {
-            const isComparing = state.compareList.includes(career.id);
-            const canCompare = state.compareList.length < 3 || isComparing;
-            
-            return (
-              <Card key={career.id} className="p-6 flex flex-col md:flex-row gap-6 hover:shadow-md transition-shadow">
-                <div className="flex-grow">
-                  <div className="flex items-center gap-3 mb-2">
-                    <h3 className="text-xl font-bold text-slate-900">{career.name}</h3>
-                    {idx === 0 && <Badge variant="primary">Mayor compatibilidad</Badge>}
-                  </div>
-                  <p className="text-slate-600 text-sm mb-4">{career.description}</p>
-                  
-                  <div className="bg-slate-50 rounded-lg p-3 text-sm text-slate-700 border border-slate-100 italic">
-                    "{career.name} aparece entre tus alternativas porque presentas interés alto en las dimensiones requeridas y compartes el perfil de habilidades."
-                    <span className="text-xs text-slate-400 block mt-1">(Explicación referencial)</span>
-                  </div>
-                </div>
-                
-                <div className="shrink-0 flex flex-col items-center justify-center min-w-[140px] md:border-l md:border-slate-100 md:pl-6">
-                  <div className="text-4xl font-bold text-primary-600 mb-1">
-                    {career.compatibility}%
-                  </div>
-                  <span className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-4">Compatibilidad</span>
-                  
-                  <div className="flex flex-col gap-2 w-full">
-                    <Button onClick={() => handleTestCareer(career.id)} className="w-full text-sm h-9">
-                      Probar carrera
-                    </Button>
-                    <Button 
-                      variant={isComparing ? "secondary" : "outline"} 
-                      className="w-full text-sm h-9"
-                      onClick={() => toggleCompare(career.id)}
-                      disabled={!canCompare}
-                    >
-                      {isComparing ? <><Check className="w-4 h-4 mr-1" /> Comparando</> : <><PlusCircle className="w-4 h-4 mr-1" /> Comparar</>}
-                    </Button>
-                  </div>
-                </div>
-              </Card>
-            );
-          })}
-        </div>
-
-        <div className="lg:col-span-1 sticky top-24">
-          <Card className="p-6">
-            <h3 className="font-semibold text-slate-900 mb-4">Tu perfil VocaRuta</h3>
-            <div className="h-64 w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <RadarChart cx="50%" cy="50%" outerRadius="70%" data={radarData}>
-                  <PolarGrid stroke="#e2e8f0" />
-                  <PolarAngleAxis dataKey="subject" tick={{ fill: '#64748b', fontSize: 12 }} />
-                  <PolarRadiusAxis angle={30} domain={[0, 5]} tick={false} axisLine={false} />
-                  <Radar name="Estudiante" dataKey="A" stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.3} />
-                </RadarChart>
-              </ResponsiveContainer>
-            </div>
-            <p className="text-xs text-slate-500 text-center mt-4">
-              Este radar muestra tus puntajes de 1 a 5 en cada dimensión según tus respuestas.
-            </p>
-          </Card>
-        </div>
-      </div>
-    </div>
-  );
+import { recommendations, dimensions } from '../../utils/journey';
+import { careersData } from '../../data/careers';
+export default function ExplorePage(){
+ const {state,dispatch}=useJourney(); const [query,setQuery]=useState(''); const [area,setArea]=useState('Todas'); const [detail,setDetail]=useState(null);
+ const careers=state.studentScores?recommendations(state):careersData;
+ const filtered=careers.filter(c=>(area==='Todas'||c.area===area)&&c.name.toLocaleLowerCase('es').normalize('NFD').replace(/[\u0300-\u036f]/g,'').includes(query.toLocaleLowerCase('es').normalize('NFD').replace(/[\u0300-\u036f]/g,'')));
+ function open(c){setDetail(c);dispatch({type:'EXPLORE',payload:c.id});}
+ return <div className="stack"><div className="page-title"><div><span className="eyebrow">02 / EXPLORA</span><h1>Hay más de un camino para ti.</h1><p>Conoce las actividades, encuentra conexiones y guarda hasta tres alternativas.</p></div><Link className="btn btn-outline" to="/app/compara">Comparar ({state.compareList.length}/3) <ArrowRight size={16}/></Link></div>
+ {!state.studentScores?<div className="notice">Estás explorando el catálogo. <Link to="/app/conocete">Completa Conócete para ver tu afinidad personal →</Link></div>:<div className="profile-overview"><div><span className="eyebrow">TU PERFIL DE INTERESES</span><h3>Un punto de partida,<br/>no una etiqueta.</h3><Link className="text-link small" to="/app/conocete">Revisar respuestas</Link></div><div className="profile-bars">{Object.entries(dimensions).map(([key,label])=><div key={key}><span>{label}<b>{state.studentScores[key]} / 5</b></span><div className="progress-track"><i style={{width:state.studentScores[key]/5*100+'%'}}/></div></div>)}</div></div>}
+ <div className="filter-bar"><label className="search-input"><Search size={18}/><input aria-label="Buscar carrera" placeholder="Busca una carrera..." value={query} onChange={e=>setQuery(e.target.value)}/></label><select aria-label="Filtrar por área" value={area} onChange={e=>setArea(e.target.value)}>{['Todas',...new Set(careersData.map(c=>c.area))].map(a=><option key={a}>{a}</option>)}</select><span className="small muted">{filtered.length} alternativas</span></div>
+ <div className="career-grid">{filtered.map((c,i)=><article className="panel career-card" key={c.id}><div className="between"><span className={'career-symbol tone-'+(i%4)}><BookOpen size={22}/></span>{c.compatibility!==undefined&&<span className="affinity">{c.compatibility}% <small>afinidad orientativa</small></span>}</div><span className="eyebrow">{c.area}</span><h3>{c.name}</h3><p>{c.description}</p>{c.reason&&<p className="career-reason">{c.reason}</p>}<div className="career-actions"><button className="text-link" onClick={()=>open(c)}>Conocer carrera <ArrowRight size={16}/></button><button className={'icon-button '+(state.compareList.includes(c.id)?'selected':'')} aria-label={(state.compareList.includes(c.id)?'Quitar ':'Comparar ')+c.name} aria-pressed={state.compareList.includes(c.id)} disabled={!state.compareList.includes(c.id)&&state.compareList.length>=3} onClick={()=>dispatch({type:'TOGGLE_COMPARE',payload:c.id})}>{state.compareList.includes(c.id)?<Check size={18}/>:<Plus size={18}/>}</button></div></article>)}</div>
+ {!filtered.length&&<div className="panel empty-state"><Search size={32}/><h3>No encontramos esa carrera.</h3><p>Prueba otro término o elimina el filtro.</p><button className="btn btn-outline" onClick={()=>{setQuery('');setArea('Todas');}}>Limpiar filtros</button></div>}
+ <details className="method-note"><summary>¿Cómo calculamos la afinidad?</summary><p>Las respuestas de 1 a 5 se promedian en cinco áreas y se convierten a una escala de 0 a 100. Cada carrera tiene pesos ilustrativos de 1 a 5. La afinidad es el promedio ponderado. Si completas su simulación, combinamos 75% de ese resultado con 25% de tu reflexión. Una experiencia que no disfrutas también cuenta. No mide aptitud ni probabilidad de éxito. La metodología requiere validación profesional.</p></details>
+ {state.compareList.length===3&&<p className="notice">Ya elegiste tres alternativas. Quita una para agregar otra, o continúa al comparador.</p>}
+ {detail&&<div className="dialog-backdrop" onClick={e=>{if(e.target===e.currentTarget)setDetail(null);}}><section className="dialog panel" role="dialog" aria-modal="true" aria-labelledby="career-title" onKeyDown={e=>{if(e.key==='Escape')setDetail(null);}}><button className="dialog-close icon-button" onClick={()=>setDetail(null)} autoFocus aria-label="Cerrar detalle"><X/></button><span className="eyebrow">{detail.area}</span><h2 id="career-title">{detail.name}</h2><p>{detail.description}</p><h3>Un vistazo al día a día</h3><p>{detail.tasks}</p><h3>Lo que podrías estudiar</h3><div className="tags">{detail.mainCourses.map(c=><span key={c}>{c}</span>)}</div><h3>Espacios de trabajo</h3><p>{detail.work}</p><p className="small muted">{detail.duration}. Descripción general: revisa la malla y duración de cada institución.</p><div className="hero-actions"><Link className="btn" to={'/app/prueba?career='+detail.id}>Explorar experiencias <ArrowRight size={17}/></Link><button className="btn btn-outline" disabled={!state.compareList.includes(detail.id)&&state.compareList.length>=3} onClick={()=>dispatch({type:'TOGGLE_COMPARE',payload:detail.id})}>{state.compareList.includes(detail.id)?'Quitar del comparador':'Agregar al comparador'}</button></div><button className="text-link" onClick={()=>setDetail(null)}>Volver al catálogo</button></section></div>}
+ </div>;
 }
